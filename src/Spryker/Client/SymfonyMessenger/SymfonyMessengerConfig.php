@@ -32,7 +32,7 @@ class SymfonyMessengerConfig extends AbstractBundleConfig
      *
      * @api
      *
-     * @return array<string, array<int, string>>
+     * @return array<string, list<string>>
      */
     public function getMessageToTransportMap(): array
     {

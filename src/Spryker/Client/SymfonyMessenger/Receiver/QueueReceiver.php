@@ -106,7 +106,7 @@ class QueueReceiver implements ReceiverInterface
      */
     protected function consumeMessages(string $queueName, int $chunkSize = 100): array
     {
-        /** @var \Spryker\Client\SymfonyMessenger\Transport\QueueManagementTransportInterface $transport */
+        /** @var \Spryker\Client\SymfonyMessenger\Transport\QueueManagementTransportInterface $transport */ // @phpstan-ignore varTag.nativeType
         $transport = $this->queueTransport;
         $envelopes = $transport->consumeMessages($queueName, $chunkSize);
         $queueReceiveMessageTransfers = [];
