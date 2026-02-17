@@ -49,4 +49,29 @@ interface SymfonyMessengerClientInterface
      * @return bool
      */
     public function areQueuesEmpty(array $queueNames): bool;
+
+    /**
+     * Specification:
+     * - Sends a message using the Symfony Messenger component.
+     *
+     * @api
+     *
+     * @param object $message
+     *
+     * @return void
+     */
+    public function sendMessage(object $message): void;
+
+    /**
+     * Specification:
+     * - Consume messages using Symfony Messenger Worker.
+     *
+     * @api
+     *
+     * @param array<string> $receivers
+     * @param array<string, mixed> $workerOptions
+     *
+     * @return int
+     */
+    public function consume(array $receivers, array $workerOptions): int;
 }

@@ -23,7 +23,7 @@ use Symfony\Component\Messenger\Middleware\SendMessageMiddleware;
  * By default, each exchange will have an associated error queue with the ".error" suffix. If configuration has also other binding that will be added on top of that.
  * Each bus is lazily instantiated when requested for the first time via the get() method.
  */
-class BusLocatorContainer implements ContainerInterface
+class QueueBusLocatorContainer implements ContainerInterface
 {
     /**
      * @var array<string, \Closure|\Symfony\Component\Messenger\MessageBusInterface>
@@ -133,6 +133,8 @@ class BusLocatorContainer implements ContainerInterface
                 'type' => 'direct',
             ],
         ]);
+
+        $compiledOptions['transport_key_suffix'] = $compiledOptions['exchange']['name'];
 
         return new SendMessageMiddleware(
             $this->sendersLocatorBuilder->build($compiledOptions),

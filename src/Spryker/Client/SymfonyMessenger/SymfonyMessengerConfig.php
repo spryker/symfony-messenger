@@ -32,7 +32,9 @@ class SymfonyMessengerConfig extends AbstractBundleConfig
      *
      * @api
      *
-     * @return array<string, list<string>>
+     * @deprecated Map message to transports by adding implementation of {@link \Spryker\Shared\SymfonyMessengerExtension\Dependency\Plugin\MessageMappingProviderPluginInterface} instead.
+     *
+     * @return array<string, array<int, string>>
      */
     public function getMessageToTransportMap(): array
     {
@@ -41,6 +43,21 @@ class SymfonyMessengerConfig extends AbstractBundleConfig
                 static::TRANSPORT_AMQP,
             ],
         ];
+    }
+
+    /**
+     * Specification:
+     * - Returns transport configuration for messenger transports.
+     * - Each key is a transport name, each value is an array of transport options.
+     * - `default` key is used for default transport configuration.
+     *
+     * @api
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function getTransportConfig(): array
+    {
+        return [];
     }
 
     /**

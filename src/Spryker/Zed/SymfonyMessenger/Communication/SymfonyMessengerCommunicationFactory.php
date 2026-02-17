@@ -9,6 +9,8 @@ namespace Spryker\Zed\SymfonyMessenger\Communication;
 
 use Spryker\Client\SymfonyMessenger\SymfonyMessengerClientInterface;
 use Spryker\Zed\Kernel\Communication\AbstractCommunicationFactory;
+use Spryker\Zed\SymfonyMessenger\Communication\Consumer\SymfonyMessengerConsumer;
+use Spryker\Zed\SymfonyMessenger\Communication\Consumer\SymfonyMessengerConsumerInterface;
 use Spryker\Zed\SymfonyMessenger\Communication\QueueApi\QueueInfo;
 use Spryker\Zed\SymfonyMessenger\Communication\QueueApi\QueueInfoInterface;
 use Spryker\Zed\SymfonyMessenger\SymfonyMessengerDependencyProvider;
@@ -21,6 +23,13 @@ class SymfonyMessengerCommunicationFactory extends AbstractCommunicationFactory
     public function createQueueInfo(): QueueInfoInterface
     {
         return new QueueInfo(
+            $this->getSymfonyMessengerClient(),
+        );
+    }
+
+    public function createSymfonyMessengerConsumer(): SymfonyMessengerConsumerInterface
+    {
+        return new SymfonyMessengerConsumer(
             $this->getSymfonyMessengerClient(),
         );
     }

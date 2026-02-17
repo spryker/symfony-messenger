@@ -1,4 +1,6 @@
 parameters:
     level: 7
+    excludePaths:
+        - '*/Spryker/Client/SymfonyMessenger/Worker/Worker.php'
     ignoreErrors:
         - '#Method .+\\SymfonyMessengerFactory::getInstalledTransportFactories\(\) return type with generic interface Symfony\\Component\\Messenger\\Transport\\TransportFactoryInterface does not specify its types: TTransport#'

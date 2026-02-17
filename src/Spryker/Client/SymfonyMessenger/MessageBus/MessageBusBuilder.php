@@ -11,7 +11,7 @@ use Psr\Container\ContainerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\RoutableMessageBus;
 
-class QueueMessageBusBuilder implements MessageBusBuilderInterface
+class MessageBusBuilder implements MessageBusBuilderInterface
 {
     protected static ?ContainerInterface $container = null;
 
@@ -27,6 +27,6 @@ class QueueMessageBusBuilder implements MessageBusBuilderInterface
 
     protected function getRouterMessageBus(): MessageBusInterface
     {
-        return new RoutableMessageBus(static::$container);
+        return new RoutableMessageBus(static::$container, static::$container->has('default') ? static::$container->get('default') : null);
     }
 }
