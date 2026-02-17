@@ -59,4 +59,33 @@ class SymfonyMessengerClient extends AbstractClient implements SymfonyMessengerC
 
         return $transport->areQueuesEmpty($queueNames);
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
+     *
+     * @param object $message
+     *
+     * @return void
+     */
+    public function sendMessage(object $message): void
+    {
+        $this->getFactory()->createSender()->send($message);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
+     *
+     * @param array<string> $receivers
+     * @param array<string, mixed> $workerOptions
+     *
+     * @return int
+     */
+    public function consume(array $receivers, array $workerOptions): int
+    {
+        return $this->getFactory()->createConsumer()->consume($receivers, $workerOptions);
+    }
 }

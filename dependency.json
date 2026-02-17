@@ -1,5 +1,9 @@
 {
     "include": {
         "symfony/amqp-messenger": "Used, but not resolved via tooling due to Symfony namespace"
+    },
+    "exclude": {
+        "spryker/log": "Not used directly, but worker allows to add it",
+        "psr/event-dispatcher": "Not used directly, but worker allows to add it"
     }
 }

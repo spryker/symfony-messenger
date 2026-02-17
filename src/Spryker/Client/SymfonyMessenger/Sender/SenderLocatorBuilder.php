@@ -17,10 +17,12 @@ class SenderLocatorBuilder implements SenderLocatorBuilderInterface
 {
     /**
      * @param array<string, \Closure> $availableTransports
+     * @param array<\Spryker\Shared\SymfonyMessengerExtension\Dependency\Plugin\MessageMappingProviderPluginInterface> $messageMapProviderPlugins
      */
     public function __construct(
         protected SymfonyMessengerConfig $messengerConfig,
-        protected array $availableTransports = []
+        protected array $availableTransports = [],
+        protected array $messageMapProviderPlugins = [],
     ) {
     }
 
@@ -30,9 +32,26 @@ class SenderLocatorBuilder implements SenderLocatorBuilderInterface
     public function build(array $options = []): SendersLocatorInterface
     {
         return new SendersLocator(
-            $this->messengerConfig->getMessageToTransportMap(),
+            $this->mapMessageToTransport(),
             $this->buildSenderLocatorContainer($options),
         );
+    }
+
+    /**
+     * @return array<string, array<string>>
+     */
+    protected function mapMessageToTransport(): array
+    {
+        $map = $this->messengerConfig->getMessageToTransportMap();
+
+        foreach ($this->messageMapProviderPlugins as $messageMapProviderPlugin) {
+            foreach ($messageMapProviderPlugin->getMessageToTransportMap() as $message => $transport) {
+                $transport = is_array($transport) ? $transport : [$transport];
+                $map[$message] = $transport;
+            }
+        }
+
+        return $map;
     }
 
     /**
@@ -51,7 +70,7 @@ class SenderLocatorBuilder implements SenderLocatorBuilderInterface
             /**
              * @var array<string, \Symfony\Component\Messenger\Transport\TransportInterface>
              */
-            protected static array $transportPerExchange = [];
+            protected static array $transportPerName = [];
 
             /**
              * @param array<string, \Closure> $transports
@@ -73,13 +92,14 @@ class SenderLocatorBuilder implements SenderLocatorBuilderInterface
 
             public function get(string $id): TransportInterface
             {
-                $exchangeName = $this->options['exchange']['name'] ?? '';
-                $key = $id . ':' . $exchangeName;
-                if (!isset(static::$transportPerExchange[$key])) {
-                    static::$transportPerExchange[$key] = static::$factories[$id]($this->options);
+                $key = $this->options['exchange']['name'] ?? $this->options['transport_key_suffix'] ?? '';
+                $key = $id . ':' . $key;
+                unset($this->options['transport_key_suffix']);
+                if (!isset(static::$transportPerName[$key])) {
+                    static::$transportPerName[$key] = static::$factories[$id]($this->options);
                 }
 
-                return static::$transportPerExchange[$key];
+                return static::$transportPerName[$key];
             }
         };
     }
