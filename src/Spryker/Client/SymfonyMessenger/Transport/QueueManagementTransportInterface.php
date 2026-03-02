@@ -28,12 +28,6 @@ interface QueueManagementTransportInterface
      */
     public function deleteQueue(string $queueName, array $options = []): bool;
 
-    /**
-     * @param \Symfony\Component\Messenger\Envelope $envelope
-     * @param int $flags
-     *
-     * @return void
-     */
     public function rejectWithFlag(Envelope $envelope, int $flags = AMQP_NOPARAM): void;
 
     /**
