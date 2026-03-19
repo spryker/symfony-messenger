@@ -158,7 +158,7 @@ class Worker extends SymfonyWorker implements ErrorAwareWorkerInterface
             }
 
             //Added a non event driven time limit check to be able to stop the worker after a certain time.
-            if (isset($options['time-limit']) && $this->clock->now()->diff($start)->s >= $options['time-limit']) {
+            if (isset($options['time-limit']) && ($this->clock->now()->getTimestamp() - $start->getTimestamp()) >= $options['time-limit']) {
                 $output->writeln('Worker time limit of ' . $options['time-limit'] . ' seconds reached, stopping worker.');
                 $this->logger?->info('Worker time limit of {time_limit} seconds reached, stopping worker.', ['time_limit' => $options['time-limit']]);
 
