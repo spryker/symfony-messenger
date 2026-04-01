@@ -9,6 +9,8 @@ namespace Spryker\Client\SymfonyMessenger\Transport\Amqp;
 
 use AMQPEnvelope;
 use AMQPException;
+use Generated\Shared\Transfer\QueueInformationCollectionTransfer;
+use Generated\Shared\Transfer\QueueInformationTransfer;
 use Spryker\Client\SymfonyMessenger\Transport\QueueManagementTransportInterface;
 use Symfony\Component\Messenger\Bridge\Amqp\Transport\AmqpReceivedStamp;
 use Symfony\Component\Messenger\Bridge\Amqp\Transport\AmqpReceiver;
@@ -68,6 +70,22 @@ class AmqpTransport extends SymfonyAmqpTransport implements QueueManagementTrans
         }
 
         return true;
+    }
+
+    public function getQueues(array $queueNames): QueueInformationCollectionTransfer
+    {
+        $rabbitMqQueueCollectionTransfer = new QueueInformationCollectionTransfer();
+        foreach ($queueNames as $queueName) {
+            $queue = $this->connection->queue($queueName);
+            $messageCount = $queue->declareQueue();
+
+            $rabbitMqQueueTransfer = new QueueInformationTransfer();
+            $rabbitMqQueueTransfer->setName($queueName);
+            $rabbitMqQueueTransfer->setReadyCount($messageCount);
+            $rabbitMqQueueCollectionTransfer->addQueue($rabbitMqQueueTransfer);
+        }
+
+        return $rabbitMqQueueCollectionTransfer;
     }
 
     /**

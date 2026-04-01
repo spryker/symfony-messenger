@@ -14,4 +14,14 @@
         <property name="hasError" type="bool"/>
         <property name="isRetryExist" type="bool"/>
     </transfer>
+
+    <transfer name="QueueInformation">
+        <property name="name" type="string"/>
+        <property name="virtualHost" type="string"/>
+        <property name="readyCount" type="int"/>
+    </transfer>
+
+    <transfer name="QueueInformationCollection">
+        <property name="queues" type="QueueInformation[]" singular="queue"/>
+    </transfer>
 </transfers>

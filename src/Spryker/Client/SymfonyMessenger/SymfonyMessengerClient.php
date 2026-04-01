@@ -7,6 +7,7 @@
 
 namespace Spryker\Client\SymfonyMessenger;
 
+use Generated\Shared\Transfer\QueueInformationCollectionTransfer;
 use Generated\Shared\Transfer\QueueSendMessageTransfer;
 use Spryker\Client\Kernel\AbstractClient;
 use Spryker\Client\Queue\Model\Adapter\AdapterInterface;
@@ -58,6 +59,23 @@ class SymfonyMessengerClient extends AbstractClient implements SymfonyMessengerC
         $transport = $this->getFactory()->createDefaultQueueTransport();
 
         return $transport->areQueuesEmpty($queueNames);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
+     *
+     * @param array<string> $queueNames
+     *
+     * @return \Generated\Shared\Transfer\QueueInformationCollectionTransfer
+     */
+    public function getQueues(array $queueNames): QueueInformationCollectionTransfer
+    {
+        /** @var \Spryker\Client\SymfonyMessenger\Transport\QueueManagementTransportInterface $transport */
+        $transport = $this->getFactory()->createDefaultQueueTransport();
+
+        return $transport->getQueues($queueNames);
     }
 
     /**

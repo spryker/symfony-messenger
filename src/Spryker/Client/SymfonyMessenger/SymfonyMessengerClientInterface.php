@@ -7,6 +7,7 @@
 
 namespace Spryker\Client\SymfonyMessenger;
 
+use Generated\Shared\Transfer\QueueInformationCollectionTransfer;
 use Generated\Shared\Transfer\QueueSendMessageTransfer;
 use Spryker\Client\Queue\Model\Adapter\AdapterInterface;
 
@@ -61,6 +62,18 @@ interface SymfonyMessengerClientInterface
      * @return void
      */
     public function sendMessage(object $message): void;
+
+    /**
+     * Specification:
+     * - Returns a collection of queues with their message counts.
+     *
+     * @api
+     *
+     * @param array<string> $queueNames
+     *
+     * @return \Generated\Shared\Transfer\QueueInformationCollectionTransfer
+     */
+    public function getQueues(array $queueNames): QueueInformationCollectionTransfer;
 
     /**
      * Specification:

@@ -7,6 +7,7 @@
 
 namespace Spryker\Client\SymfonyMessenger\Transport;
 
+use Generated\Shared\Transfer\QueueInformationCollectionTransfer;
 use Symfony\Component\Messenger\Envelope;
 
 interface QueueManagementTransportInterface
@@ -39,4 +40,9 @@ interface QueueManagementTransportInterface
      * @param array<string> $queueNames
      */
     public function areQueuesEmpty(array $queueNames): bool;
+
+    /**
+     * @param array<string> $queueNames
+     */
+    public function getQueues(array $queueNames): QueueInformationCollectionTransfer;
 }

@@ -7,6 +7,8 @@
 
 namespace Spryker\Zed\SymfonyMessenger\Communication\QueueApi;
 
+use Generated\Shared\Transfer\QueueInformationCollectionTransfer;
+
 interface QueueInfoInterface
 {
     /**
@@ -15,4 +17,11 @@ interface QueueInfoInterface
      * @return bool
      */
     public function areQueuesEmpty(array $queueNames): bool;
+
+    /**
+     * @param array<string> $queueNames
+     *
+     * @return \Generated\Shared\Transfer\QueueInformationCollectionTransfer
+     */
+    public function getQueues(array $queueNames): QueueInformationCollectionTransfer;
 }

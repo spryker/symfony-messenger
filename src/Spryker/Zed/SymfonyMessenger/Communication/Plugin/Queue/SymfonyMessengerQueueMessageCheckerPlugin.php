@@ -7,8 +7,10 @@
 
 namespace Spryker\Zed\SymfonyMessenger\Communication\Plugin\Queue;
 
+use Generated\Shared\Transfer\QueueInformationCollectionTransfer;
 use Spryker\Client\SymfonyMessenger\Adapter\SymfonyMessengerQueueAdapter;
 use Spryker\Zed\Kernel\Communication\AbstractPlugin;
+use Spryker\Zed\QueueExtension\Dependency\Plugin\QueueBulkMessageCheckerPluginInterface;
 use Spryker\Zed\QueueExtension\Dependency\Plugin\QueueMessageCheckerPluginInterface;
 
 /**
@@ -16,7 +18,7 @@ use Spryker\Zed\QueueExtension\Dependency\Plugin\QueueMessageCheckerPluginInterf
  * @method \Spryker\Zed\SymfonyMessenger\SymfonyMessengerConfig getConfig()
  * @method \Spryker\Zed\SymfonyMessenger\Communication\SymfonyMessengerCommunicationFactory getFactory()
  */
-class SymfonyMessengerQueueMessageCheckerPlugin extends AbstractPlugin implements QueueMessageCheckerPluginInterface
+class SymfonyMessengerQueueMessageCheckerPlugin extends AbstractPlugin implements QueueMessageCheckerPluginInterface, QueueBulkMessageCheckerPluginInterface
 {
     /**
      * {@inheritDoc}
@@ -31,6 +33,20 @@ class SymfonyMessengerQueueMessageCheckerPlugin extends AbstractPlugin implement
     public function areQueuesEmpty(array $queueNames): bool
     {
         return $this->getFactory()->createQueueInfo()->areQueuesEmpty($queueNames);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @api
+     *
+     * @param array<string> $queueNames
+     *
+     * @return \Generated\Shared\Transfer\QueueInformationCollectionTransfer
+     */
+    public function getQueues(array $queueNames): QueueInformationCollectionTransfer
+    {
+        return $this->getFactory()->createQueueInfo()->getQueues($queueNames);
     }
 
     /**

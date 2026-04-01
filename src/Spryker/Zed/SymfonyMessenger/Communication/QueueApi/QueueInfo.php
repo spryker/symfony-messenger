@@ -7,6 +7,7 @@
 
 namespace Spryker\Zed\SymfonyMessenger\Communication\QueueApi;
 
+use Generated\Shared\Transfer\QueueInformationCollectionTransfer;
 use Spryker\Client\SymfonyMessenger\SymfonyMessengerClientInterface;
 
 class QueueInfo implements QueueInfoInterface
@@ -24,5 +25,15 @@ class QueueInfo implements QueueInfoInterface
     public function areQueuesEmpty(array $queueNames): bool
     {
         return $this->client->areQueuesEmpty($queueNames);
+    }
+
+    /**
+     * @param array<string> $queueNames
+     *
+     * @return \Generated\Shared\Transfer\QueueInformationCollectionTransfer
+     */
+    public function getQueues(array $queueNames): QueueInformationCollectionTransfer
+    {
+        return $this->client->getQueues($queueNames);
     }
 }
