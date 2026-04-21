@@ -102,7 +102,7 @@ class SymfonyMessengerFactory extends AbstractFactory
     {
         $availableTransport = [
             $this->getConfig()::TRANSPORT_AMQP => function (array $options = []): TransportInterface {
-                return $this->createTransport($this->getConfig()->getQueueMessengerDSN(), $options);
+                return $this->createTransport($this->getConfig()->getAmqpConnectionDSN(), $options);
             },
         ];
 
@@ -203,7 +203,7 @@ class SymfonyMessengerFactory extends AbstractFactory
     {
         if (static::$defaultQueueTransport === null) {
             static::$defaultQueueTransport = $this->createTransport(
-                $this->getConfig()->getQueueMessengerDSN(),
+                $this->getConfig()->getAmqpConnectionDSN(),
                 $this->getConfig()->getQueueTransportConfiguration()['default'] ?? [],
             );
         }

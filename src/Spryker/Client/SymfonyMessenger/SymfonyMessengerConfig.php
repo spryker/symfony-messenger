@@ -28,6 +28,32 @@ class SymfonyMessengerConfig extends AbstractBundleConfig
 
     /**
      * Specification:
+     * - Builds and returns AMQP DSN from individual connection constants.
+     * - Credentials and virtual host are URL-encoded automatically — safe for passwords with special characters.
+     * - Falls back to {@link \Spryker\Client\SymfonyMessenger\SymfonyMessengerConfig::getQueueMessengerDSN()} when individual constants are not configured.
+     *
+     * @api
+     */
+    public function getAmqpConnectionDSN(): string
+    {
+        $host = $this->get(SymfonyMessengerConstants::QUEUE_AMQP_HOST, null);
+
+        if ($host === null) {
+            return (string)$this->get(SymfonyMessengerConstants::QUEUE_DSN, '');
+        }
+
+        return sprintf(
+            'amqp://%s:%s@%s:%s/%s',
+            rawurlencode((string)$this->get(SymfonyMessengerConstants::QUEUE_AMQP_USERNAME)),
+            rawurlencode((string)$this->get(SymfonyMessengerConstants::QUEUE_AMQP_PASSWORD)),
+            $host,
+            $this->get(SymfonyMessengerConstants::QUEUE_AMQP_PORT),
+            rawurlencode(ltrim((string)$this->get(SymfonyMessengerConstants::QUEUE_AMQP_VIRTUAL_HOST), '/')),
+        );
+    }
+
+    /**
+     * Specification:
      * - Returns mapping of message class to transport names.
      *
      * @api
