@@ -1,6 +1,7 @@
 namespace: SymfonyMessenger
 include:
     - tests/SprykerTest/Client/SymfonyMessenger
+    - tests/SprykerTest/Zed/SymfonyMessenger
 
 paths:
     tests: tests/

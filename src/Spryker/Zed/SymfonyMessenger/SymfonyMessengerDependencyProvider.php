@@ -14,6 +14,14 @@ class SymfonyMessengerDependencyProvider extends AbstractBundleDependencyProvide
 {
     public const string CLIENT_SYMFONY_MESSENGER = 'CLIENT_SYMFONY_MESSENGER';
 
+    public function provideBusinessLayerDependencies(Container $container): Container
+    {
+        $container = parent::provideBusinessLayerDependencies($container);
+        $container = $this->addSymfonyMessengerClient($container);
+
+        return $container;
+    }
+
     public function provideCommunicationLayerDependencies(Container $container): Container
     {
         $container = parent::provideCommunicationLayerDependencies($container);

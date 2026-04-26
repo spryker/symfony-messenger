@@ -7,6 +7,11 @@
 
 namespace Spryker\Zed\SymfonyMessenger\Business;
 
-class SymfonyMessengerFacade implements SymfonyMessengerFacadeInterface
+use Spryker\Zed\Kernel\Business\AbstractFacade;
+
+/**
+ * @method \Spryker\Zed\SymfonyMessenger\Business\SymfonyMessengerBusinessFactory getFactory()
+ */
+class SymfonyMessengerFacade extends AbstractFacade implements SymfonyMessengerFacadeInterface
 {
 }
