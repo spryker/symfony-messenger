@@ -13,7 +13,7 @@
         "spryker/symfony": "^3.19.0",
         "spryker/symfony-messenger-extension": "^1.0.0",
         "spryker/transfer": "^3.27.0",
-        "symfony/amqp-messenger": "^6.4.0"
+        "symfony/amqp-messenger": "^6.4.4"
     },
     "require-dev": {
         "spryker/code-sniffer": "*",
