@@ -42,8 +42,12 @@ class SymfonyMessengerConfig extends AbstractBundleConfig
             return (string)$this->get(SymfonyMessengerConstants::QUEUE_DSN, '');
         }
 
+        $protocol = $this->get(SymfonyMessengerConstants::QUEUE_AMQP_PROTOCOL, '');
+        $schema = $protocol && $protocol === 'TLS' ? 'amqps' : 'amqp';
+
         return sprintf(
-            'amqp://%s:%s@%s:%s/%s',
+            '%s://%s:%s@%s:%s/%s',
+            $schema,
             rawurlencode((string)$this->get(SymfonyMessengerConstants::QUEUE_AMQP_USERNAME)),
             rawurlencode((string)$this->get(SymfonyMessengerConstants::QUEUE_AMQP_PASSWORD)),
             $host,

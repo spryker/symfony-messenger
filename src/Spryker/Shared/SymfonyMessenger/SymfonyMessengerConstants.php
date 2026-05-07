@@ -35,6 +35,15 @@ interface SymfonyMessengerConstants
 
     /**
      * Specification:
+     * - AMQP protocol.
+     * - If protocolo is TLS uses amqps and if it's not uses amqp as a schema name in the DNS.
+     *
+     * @api
+     */
+    public const string QUEUE_AMQP_PROTOCOL = 'SYMFONY_MESSENGER:QUEUE_AMQP_PROTOCOL';
+
+    /**
+     * Specification:
      * - AMQP broker port.
      *
      * @api
