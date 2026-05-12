@@ -106,6 +106,19 @@ class SymfonyMessengerConfig extends AbstractBundleConfig
 
     /**
      * Specification:
+     * - Returns true when optimized AMQP message decoding is enabled.
+     * - Optimized decoding skips full Symfony Serializer deserialization and builds the envelope directly from raw AMQP data.
+     * - Enabled by default for maximum throughput.
+     *
+     * @api
+     */
+    public function isOptimizedDecodeEnabled(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Specification:
      * - Returns transport configuration for queue transport.
      * - Each key is a queue name, each value is an array of transport options.
      * - `default` key is used for default transport configuration.

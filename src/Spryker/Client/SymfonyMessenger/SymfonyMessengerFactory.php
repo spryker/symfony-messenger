@@ -30,6 +30,7 @@ use Spryker\Client\SymfonyMessenger\Sender\SenderLocatorBuilderInterface;
 use Spryker\Client\SymfonyMessenger\Stamp\QueueStampStackBuilder;
 use Spryker\Client\SymfonyMessenger\Stamp\StampStackBuilderInterface;
 use Spryker\Client\SymfonyMessenger\Transport\Amqp\AmqpTransportFactory;
+use Spryker\Client\SymfonyMessenger\Transport\Amqp\OptimizedAmqpDecoder;
 use Spryker\Client\SymfonyMessenger\Worker\WorkerBuilder;
 use Spryker\Client\SymfonyMessenger\Worker\WorkerBuilderInterface;
 use Symfony\Component\Messenger\Transport\Serialization\Serializer;
@@ -59,6 +60,7 @@ class SymfonyMessengerFactory extends AbstractFactory
         return new QueueReceiver(
             $this->createDefaultQueueTransport(),
             $this->createSerializer(),
+            $this->createQueueSender(),
         );
     }
 
@@ -163,7 +165,7 @@ class SymfonyMessengerFactory extends AbstractFactory
 
     public function createSerializer(): SerializerInterface
     {
-        return new Serializer();
+        return $this->getConfig()->isOptimizedDecodeEnabled() ? $this->createOptimizedAmqpDecoder() : $this->createSymfonySerializer();
     }
 
     public function createQueueAdapter(): AdapterInterface
@@ -235,5 +237,15 @@ class SymfonyMessengerFactory extends AbstractFactory
     public function getGroupAwareTransportsPlugins(): array
     {
         return $this->getProvidedDependency(SymfonyMessengerDependencyProvider::PLUGINS_GROUP_AWARE_TRANSPORTS_PLUGIN);
+    }
+
+    public function createOptimizedAmqpDecoder(): OptimizedAmqpDecoder
+    {
+        return new OptimizedAmqpDecoder();
+    }
+
+    public function createSymfonySerializer(): Serializer
+    {
+        return new Serializer();
     }
 }

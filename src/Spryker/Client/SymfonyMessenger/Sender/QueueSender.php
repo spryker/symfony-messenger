@@ -32,6 +32,7 @@ class QueueSender implements QueueSenderInterface
 
     public function sendMessage(string $queueName, QueueSendMessageTransfer $queueSendMessageTransfer): void
     {
+        $queueName = $this->cleanUpRetry($queueName);
         $options = [];
         if ($queueSendMessageTransfer->getRoutingKey()) {
             $options = [
@@ -56,6 +57,7 @@ class QueueSender implements QueueSenderInterface
      */
     public function sendMessages(string $queueName, array $queueSendMessageTransfers): void
     {
+        $queueName = $this->cleanUpRetry($queueName);
         foreach ($queueSendMessageTransfers as $queueSendMessageTransfer) {
             $options = [];
             if ($queueSendMessageTransfer->getRoutingKey()) {
@@ -78,6 +80,7 @@ class QueueSender implements QueueSenderInterface
 
     public function handleError(QueueReceiveMessageTransfer $queueReceiveMessageTransfer): void
     {
+        $queueReceiveMessageTransfer->setQueueName($this->cleanUpRetry($queueReceiveMessageTransfer->getQueueName()));
         $this->getRouterMessageBus()
             ->dispatch(
                 $this->buildEnvelop(
@@ -117,5 +120,14 @@ class QueueSender implements QueueSenderInterface
     protected function buildMessage(string $body): QueueMessage
     {
         return (new QueueMessage())->setBody($body);
+    }
+
+    protected function cleanUpRetry(string $queueName): string
+    {
+        if (str_ends_with($queueName, '.retry')) {
+            $queueName = str_replace('.retry', '', $queueName);
+        }
+
+        return $queueName;
     }
 }

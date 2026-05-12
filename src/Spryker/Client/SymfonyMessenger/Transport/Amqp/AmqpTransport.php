@@ -104,12 +104,8 @@ class AmqpTransport extends SymfonyAmqpTransport implements QueueManagementTrans
             static $counter = 0;
             $counter++;
 
-            /**
-             * @var string|bool $body
-             */
-            $body = $amqpEnvelope->getBody();
             $envelope = $this->serializer->decode([
-                'body' => $body === false ? '' : $body,
+                'body' => ($amqpEnvelope->getBody() ?: ''),
                 'headers' => $amqpEnvelope->getHeaders(),
             ]);
 

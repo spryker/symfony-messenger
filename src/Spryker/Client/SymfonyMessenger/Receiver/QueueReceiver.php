@@ -10,6 +10,7 @@ namespace Spryker\Client\SymfonyMessenger\Receiver;
 use Generated\Shared\Transfer\QueueReceiveMessageTransfer;
 use Generated\Shared\Transfer\QueueSendMessageTransfer;
 use RuntimeException;
+use Spryker\Client\SymfonyMessenger\Sender\QueueSenderInterface;
 use Spryker\Client\SymfonyMessenger\Transport\QueueManagementTransportInterface;
 use Symfony\Component\Messenger\Bridge\Amqp\Transport\AmqpReceivedStamp;
 use Symfony\Component\Messenger\Envelope;
@@ -31,6 +32,7 @@ class QueueReceiver implements ReceiverInterface
     public function __construct(
         protected TransportInterface $queueTransport,
         protected SerializerInterface $serializer,
+        protected QueueSenderInterface $queueSender
     ) {
     }
 
@@ -42,6 +44,12 @@ class QueueReceiver implements ReceiverInterface
 
         $envelope = $this->buildEnvelope($queueReceiveMessageTransfer);
         $this->queueTransport->ack($envelope);
+
+        if ($queueReceiveMessageTransfer->getRoutingKey()) {
+            $queueSendMessageTransfer = $queueReceiveMessageTransfer->getQueueMessage();
+            $queueSendMessageTransfer->setRoutingKey($queueReceiveMessageTransfer->getRoutingKey());
+            $this->queueSender->sendMessage($queueReceiveMessageTransfer->getQueueName(), $queueSendMessageTransfer);
+        }
 
         unset(static::$envelopes[$queueReceiveMessageTransfer->getAmqpEnvelopId()]);
     }

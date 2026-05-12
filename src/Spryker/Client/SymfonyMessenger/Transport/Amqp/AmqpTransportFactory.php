@@ -22,6 +22,9 @@ class AmqpTransportFactory extends SymfonyAmqpTransportFactory
     {
         unset($options['transport_name']);
 
-        return new AmqpTransport(Connection::fromDsn($dsn, $options), $serializer);
+        return new AmqpTransport(
+            Connection::fromDsn($dsn, $options),
+            $serializer,
+        );
     }
 }
