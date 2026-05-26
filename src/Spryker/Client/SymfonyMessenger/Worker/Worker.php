@@ -41,7 +41,14 @@ use Throwable;
  */
 class Worker extends SymfonyWorker implements ErrorAwareWorkerInterface
 {
+    /**
+     * @var array<int>
+     */
+    protected const HANDLED_SIGNALS = [SIGTERM, SIGINT];
+
     protected bool $shouldStop = false;
+
+    protected ?int $stopSignal = null;
 
     protected WorkerMetadata $metadata;
 
@@ -85,6 +92,8 @@ class Worker extends SymfonyWorker implements ErrorAwareWorkerInterface
      */
     public function run(array $options = []): void
     {
+        $this->installSignalHandlers();
+
         $options = array_merge([
             'sleep' => 1000000,
         ], $options);
@@ -164,6 +173,10 @@ class Worker extends SymfonyWorker implements ErrorAwareWorkerInterface
 
                 break;
             }
+        }
+
+        if ($this->stopSignal !== null) {
+            $output?->writeln(sprintf('Worker run ended due to signal %d.', $this->stopSignal));
         }
 
         $this->flush(true);
@@ -325,6 +338,23 @@ class Worker extends SymfonyWorker implements ErrorAwareWorkerInterface
         $this->logger?->info('Stopping worker.', ['transport_names' => $this->metadata->getTransportNames()]);
 
         $this->shouldStop = true;
+    }
+
+    protected function installSignalHandlers(): void
+    {
+        if (!function_exists('pcntl_async_signals') || !function_exists('pcntl_signal')) {
+            return;
+        }
+
+        pcntl_async_signals(true);
+
+        foreach (static::HANDLED_SIGNALS as $signal) {
+            pcntl_signal($signal, function (int $signal): void {
+                $this->stopSignal = $signal;
+                $this->logger?->info('Received signal {signal}. Stopping worker after the current iteration.', ['signal' => $signal]);
+                $this->stop();
+            });
+        }
     }
 
     public function getMetadata(): WorkerMetadata
