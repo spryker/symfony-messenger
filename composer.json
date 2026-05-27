@@ -19,6 +19,9 @@
         "spryker/code-sniffer": "*",
         "spryker/testify": "*"
     },
+    "suggest": {
+        "ext-pcntl": "If you want to shutdown Worker on signal"
+    },
     "autoload": {
         "psr-4": {
             "Spryker\\": "src/Spryker/"
