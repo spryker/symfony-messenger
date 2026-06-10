@@ -15,6 +15,12 @@ class SymfonyMessengerConfig extends AbstractBundleConfig
 {
     public const string TRANSPORT_AMQP = 'amqp';
 
+    protected const string PROTOCOL_TLS = 'TLS';
+
+    protected const string SCHEMA_AMQP = 'amqp';
+
+    protected const string SCHEMA_AMQPS = 'amqps';
+
     /**
      * Specification:
      * - Returns DSN for queue messenger transport.
@@ -42,18 +48,24 @@ class SymfonyMessengerConfig extends AbstractBundleConfig
             return (string)$this->get(SymfonyMessengerConstants::QUEUE_DSN, '');
         }
 
-        $protocol = $this->get(SymfonyMessengerConstants::QUEUE_AMQP_PROTOCOL, '');
-        $schema = $protocol && $protocol === 'TLS' ? 'amqps' : 'amqp';
+        $isTls = $this->get(SymfonyMessengerConstants::QUEUE_AMQP_PROTOCOL, '') === static::PROTOCOL_TLS;
 
-        return sprintf(
+        $dsn = sprintf(
             '%s://%s:%s@%s:%s/%s',
-            $schema,
+            $isTls ? static::SCHEMA_AMQPS : static::SCHEMA_AMQP,
             rawurlencode((string)$this->get(SymfonyMessengerConstants::QUEUE_AMQP_USERNAME)),
             rawurlencode((string)$this->get(SymfonyMessengerConstants::QUEUE_AMQP_PASSWORD)),
             $host,
             $this->get(SymfonyMessengerConstants::QUEUE_AMQP_PORT),
             rawurlencode(ltrim((string)$this->get(SymfonyMessengerConstants::QUEUE_AMQP_VIRTUAL_HOST), '/')),
         );
+        $cert = $this->get(SymfonyMessengerConstants::QUEUE_AMQP_SSL_CA_CERT_PATH, '');
+        if (!$isTls || !$cert) {
+            return $dsn;
+        }
+
+        // The AMQP transport refuses to open an `amqps` (TLS) connection without a CA certificate to verify the broker against.
+        return sprintf('%s?cacert=%s', $dsn, rawurlencode((string)$cert));
     }
 
     /**

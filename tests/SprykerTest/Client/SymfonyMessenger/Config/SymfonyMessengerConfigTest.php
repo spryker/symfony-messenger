@@ -73,4 +73,40 @@ class SymfonyMessengerConfigTest extends Unit
         // Assert
         $this->assertStringEndsWith('/my-vhost', $dsn);
     }
+
+    public function testGetAmqpConnectionDsnUsesAmqpsSchemeAndAppendsCaCertWhenProtocolIsTls(): void
+    {
+        // Arrange
+        $this->tester->setConfig(SymfonyMessengerConstants::QUEUE_AMQP_HOST, 'localhost');
+        $this->tester->setConfig(SymfonyMessengerConstants::QUEUE_AMQP_PORT, '5671');
+        $this->tester->setConfig(SymfonyMessengerConstants::QUEUE_AMQP_USERNAME, 'guest');
+        $this->tester->setConfig(SymfonyMessengerConstants::QUEUE_AMQP_PASSWORD, 'guest');
+        $this->tester->setConfig(SymfonyMessengerConstants::QUEUE_AMQP_VIRTUAL_HOST, '/eu-docker');
+        $this->tester->setConfig(SymfonyMessengerConstants::QUEUE_AMQP_PROTOCOL, 'TLS');
+        $this->tester->setConfig(SymfonyMessengerConstants::QUEUE_AMQP_SSL_CA_CERT_PATH, '/etc/ssl/certs/ca-certificates.crt');
+
+        // Act
+        $dsn = (new SymfonyMessengerConfig())->getAmqpConnectionDSN();
+
+        // Assert
+        $this->assertSame('amqps://guest:guest@localhost:5671/eu-docker?cacert=%2Fetc%2Fssl%2Fcerts%2Fca-certificates.crt', $dsn);
+    }
+
+    public function testGetAmqpConnectionDsnOmitsCaCertWhenProtocolIsNotTls(): void
+    {
+        // Arrange
+        $this->tester->setConfig(SymfonyMessengerConstants::QUEUE_AMQP_HOST, 'localhost');
+        $this->tester->setConfig(SymfonyMessengerConstants::QUEUE_AMQP_PORT, '5672');
+        $this->tester->setConfig(SymfonyMessengerConstants::QUEUE_AMQP_USERNAME, 'guest');
+        $this->tester->setConfig(SymfonyMessengerConstants::QUEUE_AMQP_PASSWORD, 'guest');
+        $this->tester->setConfig(SymfonyMessengerConstants::QUEUE_AMQP_VIRTUAL_HOST, '/eu-docker');
+        $this->tester->setConfig(SymfonyMessengerConstants::QUEUE_AMQP_SSL_CA_CERT_PATH, '/etc/ssl/certs/ca-certificates.crt');
+
+        // Act
+        $dsn = (new SymfonyMessengerConfig())->getAmqpConnectionDSN();
+
+        // Assert
+        $this->assertStringStartsWith('amqp://', $dsn);
+        $this->assertStringNotContainsString('cacert', $dsn);
+    }
 }

@@ -35,12 +35,22 @@ interface SymfonyMessengerConstants
 
     /**
      * Specification:
-     * - AMQP protocol.
-     * - If protocolo is TLS uses amqps and if it's not uses amqp as a schema name in the DNS.
+     * - AMQP connection protocol.
+     * - When set to "TLS" the DSN uses the `amqps` scheme; otherwise it uses the `amqp` scheme.
      *
      * @api
      */
     public const string QUEUE_AMQP_PROTOCOL = 'SYMFONY_MESSENGER:QUEUE_AMQP_PROTOCOL';
+
+    /**
+     * Specification:
+     * - Absolute path to the CA certificate (PEM format) used to verify the AMQP broker over TLS.
+     * - Required by the AMQP transport for `amqps://` connections; ignored for plain `amqp://`.
+     * - Defaults to the system CA bundle; override only when the broker uses a private CA.
+     *
+     * @api
+     */
+    public const string QUEUE_AMQP_SSL_CA_CERT_PATH = 'SYMFONY_MESSENGER:QUEUE_AMQP_SSL_CA_CERT_PATH';
 
     /**
      * Specification:
