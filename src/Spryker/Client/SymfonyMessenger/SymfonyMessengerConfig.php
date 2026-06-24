@@ -13,6 +13,9 @@ use Spryker\Shared\SymfonyMessenger\SymfonyMessengerConstants;
 
 class SymfonyMessengerConfig extends AbstractBundleConfig
 {
+    /**
+     * @api
+     */
     public const string TRANSPORT_AMQP = 'amqp';
 
     protected const string PROTOCOL_TLS = 'TLS';
