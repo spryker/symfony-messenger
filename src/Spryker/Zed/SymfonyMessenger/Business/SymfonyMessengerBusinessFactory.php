@@ -18,9 +18,15 @@ use Spryker\Zed\SymfonyMessenger\SymfonyMessengerDependencyProvider;
  */
 class SymfonyMessengerBusinessFactory extends AbstractBusinessFactory
 {
+    protected static ?QueueMetricsReaderInterface $queueMetricsReader = null;
+
     public function createQueueMetricsReader(): QueueMetricsReaderInterface
     {
-        return new QueueMetricsReader($this->getSymfonyMessengerClient());
+        if (static::$queueMetricsReader === null) {
+            static::$queueMetricsReader = new QueueMetricsReader($this->getSymfonyMessengerClient());
+        }
+
+        return static::$queueMetricsReader;
     }
 
     public function getSymfonyMessengerClient(): SymfonyMessengerClientInterface

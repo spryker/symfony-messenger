@@ -83,6 +83,7 @@ class SymfonyMessengerQueueAdapter implements SymfonyMessengerQueueAdapterInterf
 
     /**
      * @param string $queueName
+     * @param int $chunkSize
      * @param array<string, mixed> $options
      */
     public function receiveMessages($queueName, $chunkSize = 100, array $options = []): array
