@@ -32,4 +32,10 @@
     <transfer name="QueueMetricsResponse" strict="true">
         <property name="messageCount" type="int"/>
     </transfer>
+
+    <transfer name="MessengerTransportConfig" strict="true">
+        <property name="name" type="string"/>
+        <property name="dsn" type="string"/>
+        <property name="priority" type="int"/>
+    </transfer>
 </transfers>

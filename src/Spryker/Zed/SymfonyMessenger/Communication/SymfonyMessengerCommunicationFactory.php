@@ -11,6 +11,8 @@ use Spryker\Client\SymfonyMessenger\SymfonyMessengerClientInterface;
 use Spryker\Zed\Kernel\Communication\AbstractCommunicationFactory;
 use Spryker\Zed\SymfonyMessenger\Communication\Consumer\SymfonyMessengerConsumer;
 use Spryker\Zed\SymfonyMessenger\Communication\Consumer\SymfonyMessengerConsumerInterface;
+use Spryker\Zed\SymfonyMessenger\Communication\Process\ProcessPool;
+use Spryker\Zed\SymfonyMessenger\Communication\Process\ProcessPoolInterface;
 use Spryker\Zed\SymfonyMessenger\Communication\QueueApi\QueueInfo;
 use Spryker\Zed\SymfonyMessenger\Communication\QueueApi\QueueInfoInterface;
 use Spryker\Zed\SymfonyMessenger\SymfonyMessengerDependencyProvider;
@@ -32,6 +34,11 @@ class SymfonyMessengerCommunicationFactory extends AbstractCommunicationFactory
         return new SymfonyMessengerConsumer(
             $this->getSymfonyMessengerClient(),
         );
+    }
+
+    public function createParallelProcessPool(): ProcessPoolInterface
+    {
+        return new ProcessPool();
     }
 
     public function getSymfonyMessengerClient(): SymfonyMessengerClientInterface

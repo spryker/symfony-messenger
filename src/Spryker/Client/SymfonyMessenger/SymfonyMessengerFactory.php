@@ -7,6 +7,7 @@
 
 namespace Spryker\Client\SymfonyMessenger;
 
+use Generated\Shared\Transfer\MessengerTransportConfigTransfer;
 use Psr\Container\ContainerInterface;
 use Spryker\Client\Kernel\AbstractFactory;
 use Spryker\Client\Queue\Model\Adapter\AdapterInterface;
@@ -43,6 +44,8 @@ use Symfony\Component\Messenger\Transport\TransportInterface;
  */
 class SymfonyMessengerFactory extends AbstractFactory
 {
+    protected const int DEFAULT_TRANSPORT_PRIORITY = 0;
+
     /**
      * Adapter is stored as static in order to not build router and related dependencies multiple times.
      */
@@ -108,15 +111,57 @@ class SymfonyMessengerFactory extends AbstractFactory
             },
         ];
 
-        foreach ($this->getAvailableTransportProviderPlugins() as $plugin) {
-            foreach ($plugin->getTransportDSNByTransportName() as $transportName => $dsn) {
-                $availableTransport[$transportName] = function (array $options = []) use ($dsn): TransportInterface {
-                    return $this->createTransport($dsn, $options);
-                };
-            }
+        foreach ($this->getTransportConfigs() as $transportName => $messengerTransportConfigTransfer) {
+            $dsn = (string)$messengerTransportConfigTransfer->getDsn();
+            $availableTransport[$transportName] = function (array $options = []) use ($dsn): TransportInterface {
+                return $this->createTransport($dsn, $options);
+            };
         }
 
         return $availableTransport;
+    }
+
+    /**
+     * @return array<string, \Generated\Shared\Transfer\MessengerTransportConfigTransfer>
+     */
+    public function getTransportConfigs(): array
+    {
+        $transportConfigs = [];
+
+        foreach ($this->getAvailableTransportConfigProviderPlugins() as $plugin) {
+            foreach ($plugin->getTransportConfigByTransportName() as $transportName => $messengerTransportConfigTransfer) {
+                $transportConfigs[$transportName] = $messengerTransportConfigTransfer;
+            }
+        }
+
+        // Deprecated plugins only provide a DSN, so they are used as a fallback with the default priority.
+        foreach ($this->getAvailableTransportProviderPlugins() as $plugin) {
+            foreach ($plugin->getTransportDSNByTransportName() as $transportName => $dsn) {
+                if (isset($transportConfigs[$transportName])) {
+                    continue;
+                }
+
+                $transportConfigs[$transportName] = (new MessengerTransportConfigTransfer())
+                    ->setName($transportName)
+                    ->setDsn($dsn)
+                    ->setPriority(static::DEFAULT_TRANSPORT_PRIORITY);
+            }
+        }
+
+        return $transportConfigs;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    public function getTransportPriorities(): array
+    {
+        $transportPriorities = [];
+        foreach ($this->getTransportConfigs() as $transportName => $messengerTransportConfigTransfer) {
+            $transportPriorities[$transportName] = $messengerTransportConfigTransfer->getPriority() ?? static::DEFAULT_TRANSPORT_PRIORITY;
+        }
+
+        return $transportPriorities;
     }
 
     /**
@@ -215,7 +260,12 @@ class SymfonyMessengerFactory extends AbstractFactory
 
     public function createMessengerWorkerBuilder(): WorkerBuilderInterface
     {
-        return new WorkerBuilder($this->createMessageBusBuilder(), $this->getAvailableTransports());
+        return new WorkerBuilder(
+            $this->createMessageBusBuilder(),
+            $this->getAvailableTransports(),
+            $this->getTransportPriorities(),
+            $this->getTransportConsumeGuardPlugins(),
+        );
     }
 
     public function createConsumer(): ConsumerInterface
@@ -232,11 +282,27 @@ class SymfonyMessengerFactory extends AbstractFactory
     }
 
     /**
+     * @return array<\Spryker\Shared\SymfonyMessengerExtension\Dependency\Plugin\AvailableTransportConfigProviderPluginInterface>
+     */
+    public function getAvailableTransportConfigProviderPlugins(): array
+    {
+        return $this->getProvidedDependency(SymfonyMessengerDependencyProvider::PLUGINS_AVAILABLE_TRANSPORT_CONFIG_PROVIDER);
+    }
+
+    /**
      * @return array<\Spryker\Shared\SymfonyMessengerExtension\Dependency\Plugin\GroupAwareTransportsPluginInterface>
      */
     public function getGroupAwareTransportsPlugins(): array
     {
         return $this->getProvidedDependency(SymfonyMessengerDependencyProvider::PLUGINS_GROUP_AWARE_TRANSPORTS_PLUGIN);
+    }
+
+    /**
+     * @return array<\Spryker\Shared\SymfonyMessengerExtension\Dependency\Plugin\TransportConsumeGuardPluginInterface>
+     */
+    public function getTransportConsumeGuardPlugins(): array
+    {
+        return $this->getProvidedDependency(SymfonyMessengerDependencyProvider::PLUGINS_TRANSPORT_CONSUME_GUARD);
     }
 
     public function createOptimizedAmqpDecoder(): OptimizedAmqpDecoder

@@ -12,6 +12,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Process\PhpExecutableFinder;
 
 /**
  * @method \Spryker\Zed\SymfonyMessenger\Business\SymfonyMessengerFacadeInterface getFacade()
@@ -20,60 +21,46 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class SymfonyMessengerConsumeMessagesConsole extends Console
 {
-    /**
-     * @var string
-     */
     public const string COMMAND_NAME = 'symfonymessenger:consume';
 
-    /**
-     * @var string
-     */
     public const string COMMAND_DESCRIPTION = 'Consume messages from Symfony Messenger transports';
 
-    /**
-     * @var string
-     */
     public const string ARGUMENT_RECEIVERS = 'receivers';
 
-    /**
-     * @var string
-     */
-    public const string OPTION_LIMIT = 'limit';
-
-    /**
-     * @var string
-     */
-    public const string OPTION_FAILURE_LIMIT = 'failure-limit';
-
-    /**
-     * @var string
-     */
-    public const string OPTION_MEMORY_LIMIT = 'memory-limit';
-
-    /**
-     * @var string
-     */
     public const string OPTION_TIME_LIMIT = 'time-limit';
 
-    /**
-     * @var string
-     */
     public const string OPTION_SLEEP = 'sleep';
 
-    /**
-     * @var string
-     */
     public const string OPTION_BUS = 'bus';
 
-    /**
-     * @var string
-     */
     public const string OPTION_QUEUES = 'queues';
 
-    /**
-     * @var string
-     */
     public const string OPTION_EXCLUDE_FROM_GROUP = 'exclude-from-group';
+
+    public const string OPTION_PARALLEL = 'parallel';
+
+    protected const string OPTION_OUTPUT = 'output';
+
+    protected const int DEFAULT_PARALLEL_PROCESSES = 1;
+
+    /**
+     * @var array<string>
+     */
+    protected const array CHILD_VALUE_OPTIONS = [
+        self::OPTION_TIME_LIMIT,
+        self::OPTION_SLEEP,
+        self::OPTION_BUS,
+    ];
+
+    /**
+     * @var array<string>
+     */
+    protected const array CHILD_ARRAY_OPTIONS = [
+        self::OPTION_QUEUES,
+        self::OPTION_EXCLUDE_FROM_GROUP,
+    ];
+
+    protected const string FALLBACK_CONSOLE_SCRIPT = 'vendor/bin/console';
 
     protected function configure(): void
     {
@@ -122,6 +109,16 @@ class SymfonyMessengerConsumeMessagesConsole extends Console
             'Exclude receivers from consuming if they belong to the provided group.',
         );
 
+        $this->addOption(
+            static::OPTION_PARALLEL,
+            'p',
+            InputOption::VALUE_REQUIRED,
+            'Number of worker processes to run in parallel. When greater than 1, the command spawns that many child processes of itself instead of consuming directly. '
+            . 'Intended for work queues (e.g. AMQP), where the processes act as competing consumers. '
+            . 'The scheduler transport is also safe to run in parallel: each scheduled job is guarded by the Lock facade in the cron jobs builder, so the same schedule is never executed by more than one worker at the same time.',
+            static::DEFAULT_PARALLEL_PROCESSES,
+        );
+
         parent::configure();
     }
 
@@ -136,6 +133,11 @@ class SymfonyMessengerConsumeMessagesConsole extends Console
             return static::CODE_ERROR;
         }
 
+        $numberOfProcesses = (int)$input->getOption(static::OPTION_PARALLEL);
+        if ($numberOfProcesses > static::DEFAULT_PARALLEL_PROCESSES) {
+            return $this->runInParallel($input, $output, $receivers, $numberOfProcesses);
+        }
+
         $this->info(sprintf(
             'Starting to consume messages from receiver%s: %s',
             count($receivers) > 1 ? 's' : '',
@@ -147,6 +149,79 @@ class SymfonyMessengerConsumeMessagesConsole extends Console
         $this->getFactory()->createSymfonyMessengerConsumer()->consume($receivers, $options);
 
         return static::CODE_SUCCESS;
+    }
+
+    /**
+     * @param array<string> $receivers
+     */
+    protected function runInParallel(
+        InputInterface $input,
+        OutputInterface $output,
+        array $receivers,
+        int $numberOfProcesses
+    ): int {
+        $this->info(sprintf('Spawning %d parallel worker processes.', $numberOfProcesses));
+
+        $command = $this->buildChildCommand($input, $receivers);
+
+        $commands = [];
+        for ($workerNumber = 1; $workerNumber <= $numberOfProcesses; $workerNumber++) {
+            $commands[$workerNumber] = $command;
+        }
+
+        return $this->getFactory()->createParallelProcessPool()->run(
+            $commands,
+            [static::OPTION_OUTPUT => $output],
+        );
+    }
+
+    /**
+     * Rebuilds this command's invocation for a child process, preserving all provided
+     * options and receivers except the parallel option. Returned as a list of arguments
+     * to be run without a shell.
+     *
+     * @param array<string> $receivers
+     *
+     * @return array<string>
+     */
+    protected function buildChildCommand(InputInterface $input, array $receivers): array
+    {
+        $parts = [
+            $this->resolvePhpBinary(),
+            $this->resolveConsoleScript(),
+            static::COMMAND_NAME,
+        ];
+
+        foreach (static::CHILD_VALUE_OPTIONS as $option) {
+            $value = $input->getOption($option);
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $parts[] = sprintf('--%s=%s', $option, (string)$value);
+        }
+
+        foreach (static::CHILD_ARRAY_OPTIONS as $option) {
+            foreach ((array)$input->getOption($option) as $value) {
+                $parts[] = sprintf('--%s=%s', $option, (string)$value);
+            }
+        }
+
+        foreach ($receivers as $receiver) {
+            $parts[] = $receiver;
+        }
+
+        return $parts;
+    }
+
+    protected function resolvePhpBinary(): string
+    {
+        return (new PhpExecutableFinder())->find() ?: PHP_BINARY;
+    }
+
+    protected function resolveConsoleScript(): string
+    {
+        return $_SERVER['SCRIPT_FILENAME'] ?? $_SERVER['argv'][0] ?? static::FALLBACK_CONSOLE_SCRIPT;
     }
 
     /**
@@ -178,7 +253,7 @@ class SymfonyMessengerConsumeMessagesConsole extends Console
             $options['exclude'] = $input->getOption(static::OPTION_EXCLUDE_FROM_GROUP);
         }
 
-        $options['output'] = $output;
+        $options[static::OPTION_OUTPUT] = $output;
 
         return $options;
     }

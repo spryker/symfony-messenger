@@ -18,7 +18,11 @@ class SymfonyMessengerDependencyProvider extends AbstractDependencyProvider
 
     public const string PLUGINS_AVAILABLE_TRANSPORT_PROVIDER = 'PLUGINS_AVAILABLE_TRANSPORT_PROVIDER';
 
+    public const string PLUGINS_AVAILABLE_TRANSPORT_CONFIG_PROVIDER = 'PLUGINS_AVAILABLE_TRANSPORT_CONFIG_PROVIDER';
+
     public const string PLUGINS_GROUP_AWARE_TRANSPORTS_PLUGIN = 'PLUGINS_GROUP_AWARE_TRANSPORTS_PLUGIN';
+
+    public const string PLUGINS_TRANSPORT_CONSUME_GUARD = 'PLUGINS_TRANSPORT_CONSUME_GUARD';
 
     public function provideServiceLayerDependencies(Container $container): Container
     {
@@ -26,7 +30,9 @@ class SymfonyMessengerDependencyProvider extends AbstractDependencyProvider
         $container = $this->addTransportFactoryProviderPlugins($container);
         $container = $this->addMessageMappingProviderPlugins($container);
         $container = $this->addAvailableTransportProviderPlugins($container);
+        $container = $this->addAvailableTransportConfigProviderPlugins($container);
         $container = $this->addGroupAwareTransportsPlugins($container);
+        $container = $this->addTransportConsumeGuardPlugins($container);
 
         return $container;
     }
@@ -82,6 +88,23 @@ class SymfonyMessengerDependencyProvider extends AbstractDependencyProvider
         return [];
     }
 
+    protected function addAvailableTransportConfigProviderPlugins(Container $container): Container
+    {
+        $container->set(static::PLUGINS_AVAILABLE_TRANSPORT_CONFIG_PROVIDER, function () {
+            return $this->getAvailableTransportConfigProviderPlugins();
+        });
+
+        return $container;
+    }
+
+    /**
+     * @return array<\Spryker\Shared\SymfonyMessengerExtension\Dependency\Plugin\AvailableTransportConfigProviderPluginInterface>
+     */
+    protected function getAvailableTransportConfigProviderPlugins(): array
+    {
+        return [];
+    }
+
     protected function addGroupAwareTransportsPlugins(Container $container): Container
     {
         $container->set(static::PLUGINS_GROUP_AWARE_TRANSPORTS_PLUGIN, function () {
@@ -92,9 +115,26 @@ class SymfonyMessengerDependencyProvider extends AbstractDependencyProvider
     }
 
     /**
-     * @return array<\Spryker\Shared\SymfonyMessengerExtension\Dependency\Plugin\AvailableTransportProviderPluginInterface>
+     * @return array<\Spryker\Shared\SymfonyMessengerExtension\Dependency\Plugin\GroupAwareTransportsPluginInterface>
      */
     protected function getGroupAwareTransportsPlugins(): array
+    {
+        return [];
+    }
+
+    protected function addTransportConsumeGuardPlugins(Container $container): Container
+    {
+        $container->set(static::PLUGINS_TRANSPORT_CONSUME_GUARD, function () {
+            return $this->getTransportConsumeGuardPlugins();
+        });
+
+        return $container;
+    }
+
+    /**
+     * @return array<\Spryker\Shared\SymfonyMessengerExtension\Dependency\Plugin\TransportConsumeGuardPluginInterface>
+     */
+    protected function getTransportConsumeGuardPlugins(): array
     {
         return [];
     }

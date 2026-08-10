@@ -13,10 +13,14 @@ class WorkerBuilder implements WorkerBuilderInterface
 {
     /**
      * @param array<string, callable> $availableTransports
+     * @param array<string, int> $transportPriorities
+     * @param array<\Spryker\Shared\SymfonyMessengerExtension\Dependency\Plugin\TransportConsumeGuardPluginInterface> $transportConsumeGuardPlugins
      */
     public function __construct(
         protected MessageBusBuilderInterface $messageBusBuilder,
-        protected array $availableTransports
+        protected array $availableTransports,
+        protected array $transportPriorities = [],
+        protected array $transportConsumeGuardPlugins = []
     ) {
     }
 
@@ -33,6 +37,27 @@ class WorkerBuilder implements WorkerBuilderInterface
             }
         }
 
-        return new Worker($receiversWithTransports, $this->messageBusBuilder->getMessageBus());
+        $receiversWithTransports = $this->sortByPriority($receiversWithTransports);
+
+        return new Worker(
+            $receiversWithTransports,
+            $this->messageBusBuilder->getMessageBus(),
+            transportConsumeGuardPlugins: $this->transportConsumeGuardPlugins,
+        );
+    }
+
+    /**
+     * @param array<string, \Symfony\Component\Messenger\Transport\TransportInterface> $receiversWithTransports
+     *
+     * @return array<string, \Symfony\Component\Messenger\Transport\TransportInterface>
+     */
+    protected function sortByPriority(array $receiversWithTransports): array
+    {
+        // The higher the priority, the earlier the transport is polled by the worker.
+        uksort($receiversWithTransports, function (string $transportNameA, string $transportNameB): int {
+            return ($this->transportPriorities[$transportNameB] ?? 0) <=> ($this->transportPriorities[$transportNameA] ?? 0);
+        });
+
+        return $receiversWithTransports;
     }
 }

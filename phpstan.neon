@@ -4,3 +4,4 @@ parameters:
         - '*/Spryker/Client/SymfonyMessenger/Worker/Worker.php'
     ignoreErrors:
         - '#Method .+\\SymfonyMessengerFactory::getInstalledTransportFactories\(\) return type with generic interface Symfony\\Component\\Messenger\\Transport\\TransportFactoryInterface does not specify its types: TTransport#'
+        - '#Parameter \#2 \$handler of function pcntl_signal expects \(callable\(\): mixed\)\|int, \(callable\(\): mixed\)\|int\|string given#'

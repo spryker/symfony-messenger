@@ -1,7 +1,8 @@
 {
     "include": {
         "symfony/amqp-messenger": "Used, but not resolved via tooling due to Symfony namespace",
-        "spryker/transfer": "Added for strict functionality"
+        "spryker/transfer": "Added for strict functionality",
+        "symfony/messenger": "Locks Messenger to the currently supported version"
     },
     "exclude": {
         "spryker/log": "Not used directly, but worker allows to add it",

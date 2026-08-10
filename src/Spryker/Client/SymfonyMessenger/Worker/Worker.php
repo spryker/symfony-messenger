@@ -64,6 +64,7 @@ class Worker extends SymfonyWorker implements ErrorAwareWorkerInterface
     /**
      * @param array<\Symfony\Component\Messenger\Transport\Receiver\ReceiverInterface> $receivers Where the key is the transport name
      * @param array<string, \Symfony\Component\RateLimiter\LimiterFactory>|null $rateLimiters Where the key is the transport name
+     * @param array<\Spryker\Shared\SymfonyMessengerExtension\Dependency\Plugin\TransportConsumeGuardPluginInterface> $transportConsumeGuardPlugins
      */
     public function __construct(
         protected array $receivers,
@@ -72,6 +73,7 @@ class Worker extends SymfonyWorker implements ErrorAwareWorkerInterface
         protected ?LoggerInterface $logger = null,
         protected ?array $rateLimiters = null,
         protected ClockInterface $clock = new Clock(),
+        protected array $transportConsumeGuardPlugins = [],
     ) {
         $this->metadata = new WorkerMetadata([
             'transportNames' => array_keys($receivers),
@@ -124,6 +126,11 @@ class Worker extends SymfonyWorker implements ErrorAwareWorkerInterface
             $envelopeHandled = false;
             $envelopeHandledStart = $this->clock->now();
             foreach ($this->receivers as $transportName => $receiver) {
+                // A guard plugin can pause a transport at runtime (e.g. a scheduled job disabled from the Back Office).
+                if (!$this->canConsumeTransport($transportName)) {
+                    continue;
+                }
+
                 if ($queueNames) {
                     $envelopes = $receiver->getFromQueues($queueNames);
                 } else {
@@ -186,6 +193,17 @@ class Worker extends SymfonyWorker implements ErrorAwareWorkerInterface
     public function hadErrors(): bool
     {
         return $this->hadErrors;
+    }
+
+    protected function canConsumeTransport(string $transportName): bool
+    {
+        foreach ($this->transportConsumeGuardPlugins as $transportConsumeGuardPlugin) {
+            if (!$transportConsumeGuardPlugin->canConsumeTransport($transportName)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     protected function handleMessage(Envelope $envelope, string $transportName, ?OutputInterface $output = null): void
