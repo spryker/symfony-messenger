@@ -3,6 +3,8 @@
 
     <transfer name="QueueSendMessage">
         <property name="body" type="string"/>
+        <property name="routingKey" type="string"/>
+        <property name="headers" type="array" singular="header"/>
     </transfer>
 
     <transfer name="QueueReceiveMessage">
@@ -13,6 +15,9 @@
         <property name="reject" type="bool"/>
         <property name="hasError" type="bool"/>
         <property name="isRetryExist" type="bool"/>
+        <property name="routingKey" type="string"/>
+        <property name="deliveryTag" type="string"/>
+        <property name="requeue" type="bool"/>
     </transfer>
 
     <transfer name="QueueInformation">

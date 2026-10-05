@@ -39,6 +39,8 @@ class SymfonyMessengerConsumeMessagesConsole extends Console
 
     public const string OPTION_PARALLEL = 'parallel';
 
+    public const string OPTION_WORKER_RECEIVERS = 'worker-receivers';
+
     protected const string OPTION_OUTPUT = 'output';
 
     protected const int DEFAULT_PARALLEL_PROCESSES = 1;
@@ -113,10 +115,22 @@ class SymfonyMessengerConsumeMessagesConsole extends Console
             static::OPTION_PARALLEL,
             'p',
             InputOption::VALUE_REQUIRED,
-            'Number of worker processes to run in parallel. When greater than 1, the command spawns that many child processes of itself instead of consuming directly. '
+            'Number of worker processes consuming the receivers passed as arguments. When it resolves to more than one child, '
+            . 'the command spawns child processes of itself instead of consuming directly. Additive with --worker-receivers: '
+            . 'each dedicated list gets its own child on top of these. '
             . 'Intended for work queues (e.g. AMQP), where the processes act as competing consumers. '
             . 'The scheduler transport is also safe to run in parallel: each scheduled job is guarded by the Lock facade in the cron jobs builder, so the same schedule is never executed by more than one worker at the same time.',
             static::DEFAULT_PARALLEL_PROCESSES,
+        );
+
+        $this->addOption(
+            static::OPTION_WORKER_RECEIVERS,
+            'w',
+            InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+            'Give one child process its own receiver list, as a comma-separated set of receiver names. '
+            . 'Repeat the option to dedicate further children. Children without a dedicated list consume the '
+            . 'receivers passed as arguments and act as competing consumers over them. '
+            . 'Only has an effect when more than one process is spawned.',
         );
 
         parent::configure();
@@ -133,9 +147,13 @@ class SymfonyMessengerConsumeMessagesConsole extends Console
             return static::CODE_ERROR;
         }
 
-        $numberOfProcesses = (int)$input->getOption(static::OPTION_PARALLEL);
-        if ($numberOfProcesses > static::DEFAULT_PARALLEL_PROCESSES) {
-            return $this->runInParallel($input, $output, $receivers, $numberOfProcesses);
+        $dedicatedReceiverLists = $this->getDedicatedReceiverLists($input);
+        $numberOfSharedProcesses = (int)$input->getOption(static::OPTION_PARALLEL);
+
+        // A dedicated list can only be honoured by a child process, so any assignment forces the pool
+        // even when it resolves to a single worker. Without this the option would be silently ignored.
+        if ($dedicatedReceiverLists !== [] || $numberOfSharedProcesses > static::DEFAULT_PARALLEL_PROCESSES) {
+            return $this->runInParallel($input, $output, $receivers, $dedicatedReceiverLists, $numberOfSharedProcesses);
         }
 
         $this->info(sprintf(
@@ -153,26 +171,75 @@ class SymfonyMessengerConsumeMessagesConsole extends Console
 
     /**
      * @param array<string> $receivers
+     * @param array<int, array<string>> $dedicatedReceiverLists
      */
     protected function runInParallel(
         InputInterface $input,
         OutputInterface $output,
         array $receivers,
-        int $numberOfProcesses
+        array $dedicatedReceiverLists,
+        int $numberOfSharedProcesses
     ): int {
-        $this->info(sprintf('Spawning %d parallel worker processes.', $numberOfProcesses));
+        $assignments = $this->resolveWorkerReceivers($receivers, $dedicatedReceiverLists, $numberOfSharedProcesses);
 
-        $command = $this->buildChildCommand($input, $receivers);
+        $this->info(sprintf('Spawning %d parallel worker processes.', count($assignments)));
 
         $commands = [];
-        for ($workerNumber = 1; $workerNumber <= $numberOfProcesses; $workerNumber++) {
-            $commands[$workerNumber] = $command;
+        foreach ($assignments as $workerNumber => $workerReceivers) {
+            $this->info(sprintf('Worker #%d consumes: %s', $workerNumber, implode(', ', $workerReceivers)));
+            $commands[$workerNumber] = $this->buildChildCommand($input, $workerReceivers);
         }
 
         return $this->getFactory()->createParallelProcessPool()->run(
             $commands,
             [static::OPTION_OUTPUT => $output],
         );
+    }
+
+    /**
+     * Assigns receivers per child. Each --worker-receivers list gets a child of its own, and
+     * --parallel then adds that many further children consuming the receivers passed as arguments, as
+     * competing consumers. The two are additive, so a dedicated worker never displaces a shared one -
+     * with `--worker-receivers=a b` and no --parallel the result is one child on `a` and one on `b`.
+     *
+     * @param array<string> $sharedReceivers
+     * @param array<int, array<string>> $dedicatedReceiverLists
+     *
+     * @return array<int, array<string>>
+     */
+    protected function resolveWorkerReceivers(
+        array $sharedReceivers,
+        array $dedicatedReceiverLists,
+        int $numberOfSharedProcesses
+    ): array {
+        $assignments = $dedicatedReceiverLists;
+
+        for ($index = 0; $index < $numberOfSharedProcesses; $index++) {
+            $assignments[] = $sharedReceivers;
+        }
+
+        /** @var array<int, array<string>> $numberedAssignments */
+        $numberedAssignments = array_combine(range(1, count($assignments)), $assignments);
+
+        return $numberedAssignments;
+    }
+
+    /**
+     * @return array<int, array<string>>
+     */
+    protected function getDedicatedReceiverLists(InputInterface $input): array
+    {
+        $dedicatedReceiverLists = [];
+
+        foreach ((array)$input->getOption(static::OPTION_WORKER_RECEIVERS) as $dedicatedReceiverList) {
+            $dedicatedReceivers = array_values(array_filter(array_map('trim', explode(',', (string)$dedicatedReceiverList))));
+
+            if ($dedicatedReceivers !== []) {
+                $dedicatedReceiverLists[] = $dedicatedReceivers;
+            }
+        }
+
+        return $dedicatedReceiverLists;
     }
 
     /**
